@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+    volumes:
+      - ./redis:/data
+
+  meili:
+    image: getmeili/meilisearch:v1.8
+    restart: unless-stopped
+    environment:
+      MEILI_ENV: ${MEILI_ENV}
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+    volumes:
+      - ./meili:/meili_data
+#   codex-api:
+#     image: ghcr.io/charliecore/charliecodex-api:main # ← ajuste quando existir
+#     restart: unless-stopped
+#     env_file: .env
+#     depends_on: [db, redis, meili, minio]
+#     healthcheck:
+#       test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:4001/healthz"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 10
+# 
+  codex-web:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./caddy/health:/usr/share/nginx/html:ro
+    expose:
+      - "80"
+
+   caddy:
+    image: caddy:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file: .env
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/data:/data
+      - ./caddy/config:/config
+      - ./caddy/health:/srv/health:ro
+    depends_on:
+      - codex-web

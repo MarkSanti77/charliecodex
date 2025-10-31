@@ -1,0 +1,68 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    command: ["redis-server","--appendonly","yes"]
+    restart: unless-stopped
+    volumes:
+      - ./redis:/data
+
+  meili:
+    image: getmeili/meilisearch:v1.8
+    restart: unless-stopped
+    environment:
+      MEILI_ENV: ${MEILI_ENV}
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+    volumes:
+      - ./meili:/meili_data
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - ./minio:/data
+
+  codex-web:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./caddy/health:/usr/share/nginx/html:ro
+    expose:
+      - "80"
+
+  # API ficará comentada até publicarmos a imagem/credenciais GHCR
+  # codex-api:
+  #   image: ghcr.io/charliecore/charliecodex-api:main
+  #   restart: unless-stopped
+  #   env_file: .env
+  #   depends_on: [db, redis, meili, minio]
+  #   expose:
+  #     - "4001"
+
+  caddy:
+    image: caddy:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file: .env
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/data:/data
+      - ./caddy/config:/config
+      - ./caddy/health:/srv/health:ro
+    depends_on:
+      - codex-web
