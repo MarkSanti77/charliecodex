@@ -1,7 +1,1 @@
-name: CI – Validate Compose & Caddy
-
-on:
-  push:
-    branches: ["**"]
-  pull_request:
-    branches: ["**"]
+<<cole o YAML acima>>
