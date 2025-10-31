@@ -1,29 +1,18 @@
-# Node/Next
+# :: segredos
+.env
+.env.*.local
+caddy/config/**
+caddy/data/**
+postgres/**
+minio/**
+meili/**
+meili_data/**
+redis/**
 node_modules/
 .next/
-out/
 dist/
-build/
-
-# Docker / volumes locais
-caddy/data/
-caddy/config/
-postgres/
-minio/
-meili/
-meili_data/
-redis/
-docker-data/
-
-# Env & logs
-.env
-.env.*
-!.env.example
+out/
 *.log
-logs/
-
-# Editor/OS
-.vscode/
-.idea/
+*.sqlite
 .DS_Store
-Thumbs.db
+docker-compose.yml.bak.*
